@@ -1,0 +1,36 @@
+server:
+  address: localhost
+  port: 8080
+  ssl:
+    enabled: false
+springdoc:
+  show-actuator: true
+  swagger-ui:
+    groups-order: desc
+    disable-swagger-default-url: true
+  packages-to-scan:
+    - io.github.wesleyosantos91.api
+spring:
+  application:
+    name: api-cadastro-pessoas
+  datasource:
+    url: ${DATABASE_HOST:jdbc:mysql://localhost:3306/dev?allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${DATABASE_USER:root}
+    password: ${DATABASE_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 3
+      idle-timeout: 60000
+  jpa:
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        generate_statistics: false
+  flyway:
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+    locations: classpath:db/ddl,classpath:db/dml
