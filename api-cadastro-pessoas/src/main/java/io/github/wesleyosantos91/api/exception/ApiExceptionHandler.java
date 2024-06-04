@@ -1,17 +1,21 @@
 package io.github.wesleyosantos91.api.exception;
 
 
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
+
 import io.github.wesleyosantos91.api.v1.response.ErrorResponse;
 import io.github.wesleyosantos91.domain.exception.BusinessException;
 import io.github.wesleyosantos91.domain.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -61,6 +65,22 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return super.handleExceptionInternal(ex, problemDetail, headers, status, request);
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    private ResponseEntity<ProblemDetail> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException ex,
+                                                                                         HttpServletRequest request) {
+
+        final String errorMessage = "A record with the provided data already exists.";
+
+        final ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, errorMessage);
+        problemDetail.setTitle("Conflict");
+        problemDetail.setProperty(TIMESTAMP, Instant.now());
+        ServerHttpObservationFilter.findObservationContext(request).ifPresent(context -> context.setError(ex));
+
+        LOGGER.error("SQLIntegrityConstraintViolationException: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problemDetail);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     private ResponseEntity<ProblemDetail> handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {
 
@@ -89,7 +109,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     private ResponseEntity<ProblemDetail> handleUncaught(Exception ex, HttpServletRequest request) {
 
-        final ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        final ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, getRootCauseMessage(ex));
         problemDetail.setTitle(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
         problemDetail.setProperty(TIMESTAMP, Instant.now());
         ServerHttpObservationFilter.findObservationContext(request).ifPresent(context -> context.setError(ex));
