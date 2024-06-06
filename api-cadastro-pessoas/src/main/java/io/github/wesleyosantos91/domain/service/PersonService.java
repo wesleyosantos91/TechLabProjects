@@ -6,6 +6,8 @@ import io.github.wesleyosantos91.core.mapper.PersonMapper;
 import io.github.wesleyosantos91.domain.entity.Person;
 import io.github.wesleyosantos91.domain.exception.ResourceNotFoundException;
 import io.github.wesleyosantos91.domain.repository.PersonRepository;
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +25,8 @@ public class PersonService {
         this.mapper = mapper;
     }
 
+    @Counted(value = "person.service.save")
+    @Timed(value = "person.service.save")
     @Transactional
     public Person save(Person person) {
         return repository.save(person);
@@ -42,6 +46,8 @@ public class PersonService {
         repository.delete(person);
     }
 
+    @Counted(value = "person.service.search")
+    @Timed(value = "person.service.search")
     public Page<Person> search(Person entity, Pageable page) {
 
         final Example<Person> personExample = Example.of(entity);
